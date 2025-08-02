@@ -1,9 +1,15 @@
-const apiKey = 'YOUR_FINNHUB_API_KEY'; // d274679r01qloarhe5kgd274679r01qloarhe5l0
+const apiKey = 'd274679r01qloarhe5kgd274679r01qloarhe5l0';
 
 async function fetchPrice(ticker) {
-  const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`);
-  const data = await res.json();
-  return data.c; // current price
+  try {
+    const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`);
+    const data = await res.json();
+    console.log(`Data for ${ticker}:`, data);  // ✅ Add this line
+    return data.c;
+  } catch (err) {
+    console.error(`Error fetching ${ticker}:`, err);
+    return null;
+  }
 }
 
 async function updatePrices() {
