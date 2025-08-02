@@ -1,4 +1,4 @@
-const apiKey = 'YOUR_FINNHUB_API_KEY'; // Replace with your actual API key
+const apiKey = 'YOUR_FINNHUB_API_KEY'; // d274679r01qloarhe5kgd274679r01qloarhe5l0
 
 async function fetchPrice(ticker) {
   const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`);
