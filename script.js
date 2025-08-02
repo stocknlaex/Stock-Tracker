@@ -56,3 +56,33 @@ function resetFilter() {
 }
 
 updatePrices(); // Initial load
+function addStock() {
+  const tickerInput = document.getElementById('new-ticker');
+  const ticker = tickerInput.value.toUpperCase().trim();
+  if (!ticker) return;
+
+  const tableBody = document.querySelector('#stock-table tbody');
+
+  // Create new row
+  const newRow = document.createElement('tr');
+  newRow.setAttribute('data-ticker', ticker);
+  newRow.innerHTML = `
+    <td>${ticker}</td>
+    <td class="current-price">-</td>
+    <td><input class="manual-price" type="number" /></td>
+    <td class="recommended-price">-</td>
+  `;
+
+  tableBody.appendChild(newRow);
+  tickerInput.value = '';
+
+  // Attach event listener to new manual input
+  newRow.querySelector('.manual-price').addEventListener('input', updatePrices);
+
+  // Fetch price for the new row
+  fetchPrice(ticker).then(current => {
+    if (!current) return;
+    newRow.querySelector('.current-price').textContent = current.toFixed(2);
+    updatePrices();  // Recalculate recommendations
+  });
+}
