@@ -4,7 +4,7 @@ async function fetchPrice(ticker) {
   try {
     const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`);
     const data = await res.json();
-    console.log(`Data for ${ticker}:`, data);  // ✅ Add this line
+    console.log(`Data for ${ticker}:`, data);  
     return data.c;
   } catch (err) {
     console.error(`Error fetching ${ticker}:`, err);
