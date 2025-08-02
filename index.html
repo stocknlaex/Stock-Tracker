@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Stock Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Stock Tracker</h1>
+  <table id="stock-table">
+    <thead>
+      <tr>
+        <th>Ticker</th>
+        <th>Current Price</th>
+        <th>Manual Price</th>
+        <th>Recommended Buy Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr data-ticker="AAPL">
+        <td>AAPL</td>
+        <td class="current-price">-</td>
+        <td><input class="manual-price" type="number" /></td>
+        <td class="recommended-price">-</td>
+      </tr>
+      <tr data-ticker="MSFT">
+        <td>MSFT</td>
+        <td class="current-price">-</td>
+        <td><input class="manual-price" type="number" /></td>
+        <td class="recommended-price">-</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <button onclick="filterGreen()">Show Buy Opportunities</button>
+  <button onclick="resetFilter()">Reset Filter</button>
+
+  <script src="script.js"></script>
+</body>
+</html>
