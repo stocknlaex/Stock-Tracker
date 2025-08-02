@@ -55,7 +55,7 @@ function resetFilter() {
   rows.forEach(row => row.style.display = '');
 }
 
-updatePrices(); // Initial load
+
 function addStock() {
   const tickerInput = document.getElementById('new-ticker');
   const ticker = tickerInput.value.toUpperCase().trim();
@@ -86,3 +86,5 @@ function addStock() {
     updatePrices();  // Recalculate recommendations
   });
 }
+
+updatePrices(); // Initial load
