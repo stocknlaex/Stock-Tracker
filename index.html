@@ -1,42 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Stock Tracker</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Stock Tracker</h1>
+  <h1>📈 My Stock Tracker</h1>
+
+  <!-- Control Panel -->
+  <div id="controls">
+    <input type="text" id="new-ticker" placeholder="Enter Ticker (e.g. AAPL)">
+    <button onclick="addStock()">➕ Add Stock</button>
+    <button onclick="filterGreen()">🟢 Show Buy Opportunities</button>
+    <button onclick="resetFilter()">🔁 Reset</button>
+  </div>
+
+  <!-- Stock Table -->
   <table id="stock-table">
     <thead>
       <tr>
         <th>Ticker</th>
         <th>Current Price</th>
         <th>Manual Price</th>
+        <th>Buy @ % Drop</th>
         <th>Recommended Buy Price</th>
+        <th>Delete</th>
       </tr>
     </thead>
     <tbody>
-      <tr data-ticker="AAPL">
-        <td>AAPL</td>
-        <td class="current-price">-</td>
-        <td><input class="manual-price" type="number" /></td>
-        <td class="recommended-price">-</td>
-      </tr>
-      <tr data-ticker="MSFT">
-        <td>MSFT</td>
-        <td class="current-price">-</td>
-        <td><input class="manual-price" type="number" /></td>
-        <td class="recommended-price">-</td>
-      </tr>
+      <!-- Dynamic rows go here -->
     </tbody>
   </table>
-
-  <button onclick="filterGreen()">Show Buy Opportunities</button>
-  <button onclick="resetFilter()">Reset Filter</button>
 
   <script src="script.js"></script>
 </body>
 </html>
-<input type="text" id="new-ticker" placeholder="Enter Ticker (e.g. NVDA)">
-<button onclick="addStock()">Add Stock</button>
