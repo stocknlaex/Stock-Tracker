@@ -1,37 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>📊 Stock Tracker</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stock Tracker</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 30px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #f2f2f2; }
+    input, select { width: 100%; }
+    button { padding: 5px 10px; }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>📈 Stock Tracker</h1>
-    <div class="controls">
-      <input type="text" id="ticker-input" placeholder="Enter ticker (e.g. AAPL)">
-      <button onclick="addStock()">➕ Add</button>
-      <button onclick="showBuyOpportunities()">🟢 Show Buy Opportunities</button>
-      <button onclick="resetTable()">🔄 Reset</button>
-    </div>
+  <h2>📊 Stock Tracker</h2>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Ticker</th>
-          <th>Current Price</th>
-          <th>Manual Price</th>
-          <th>Buy % Drop</th>
-          <th>Recommended Buy Price</th>
-          <th>Comments</th>
-          <th>Delete</th>
-        </tr>
-      </thead>
-      <tbody id="stock-table">
-        <!-- Rows go here -->
-      </tbody>
-    </table>
-  </div>
+  <input type="text" id="ticker-input" placeholder="Enter Ticker (e.g. AAPL)" />
+  <button id="add-btn">➕ Add</button>
+  <button id="show-btn">📉 Show Buy Opportunities</button>
+  <button id="reset-btn">🔁 Reset</button>
+
+  <table id="stock-table">
+    <thead>
+      <tr>
+        <th>Ticker</th>
+        <th>Current Price</th>
+        <th>Manual Price</th>
+        <th>Buy % Drop</th>
+        <th>Recommended Buy Price</th>
+        <th>Comments</th>
+        <th>Delete</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- dynamic rows will be added here -->
+    </tbody>
+  </table>
 
   <script src="script.js"></script>
 </body>
