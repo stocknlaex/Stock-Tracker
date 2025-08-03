@@ -1,11 +1,9 @@
-const apiKey = 'd27igopr01qloarj8g0gd27igopr01qloarj8g10'; 
-
 async function fetchPrice(ticker) {
   try {
-    const url = `https://corsproxy.io/?https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`;
+    const url = `https://corsproxy.io/?https://query1.finance.yahoo.com/v7/finance/quote?symbols=${ticker}`;
     const res = await fetch(url);
     const data = await res.json();
-    return data.c;
+    return data.quoteResponse.result[0]?.regularMarketPrice || null;
   } catch (err) {
     console.error(`Error fetching ${ticker}:`, err);
     return null;
@@ -33,80 +31,90 @@ async function updatePrices() {
   const rows = document.querySelectorAll('#stock-table tbody tr');
   for (const row of rows) {
     const ticker = row.dataset.ticker;
-    try {
-      const current = await fetchPrice(ticker);
-      row.querySelector('.current-price').textContent = current?.toFixed(2) || 'N/A';
+    const currentPriceCell = row.querySelector('.current-price');
+    const manualInput = row.querySelector('.manual-price');
+    const dropSelect = row.querySelector('.drop-percent');
+    const recommendedCell = row.querySelector('.recommended-price');
 
-      const manualVal = parseFloat(row.querySelector('.manual-price').value);
-      const dropVal = parseFloat(row.querySelector('.drop-percent').value);
-      const recommendedCell = row.querySelector('.recommended-price');
+    const current = await fetchPrice(ticker);
+    if (!current) {
+      currentPriceCell.textContent = 'N/A';
+      recommendedCell.textContent = 'N/A';
+      continue;
+    }
 
-      if (!isNaN(manualVal) && !isNaN(dropVal)) {
-        const target = (manualVal * (1 - dropVal / 100)).toFixed(2);
-        recommendedCell.textContent = target;
-        recommendedCell.style.backgroundColor = (current <= target) ? 'lightgreen' : '';
-      } else {
-        recommendedCell.textContent = 'N/A';
-        recommendedCell.style.backgroundColor = '';
-      }
-    } catch (e) {
-      console.error(`Error fetching price for ${ticker}`, e);
+    currentPriceCell.textContent = current.toFixed(2);
+    const manualVal = parseFloat(manualInput.value);
+    const dropPercent = parseFloat(dropSelect.value);
+
+    if (!isNaN(manualVal) && !isNaN(dropPercent)) {
+      const target = (manualVal * (1 - dropPercent / 100)).toFixed(2);
+      recommendedCell.textContent = target;
+      recommendedCell.style.backgroundColor = current <= target ? 'lightgreen' : '';
+    } else {
+      recommendedCell.textContent = '';
+      recommendedCell.style.backgroundColor = '';
     }
   }
   saveToLocalStorage();
 }
 
-function addStock(ticker, manual = '', drop = '10', comment = '') {
-  if (!ticker) return;
+function addStock(ticker = '', manual = '', drop = '10', comment = '') {
   ticker = ticker.toUpperCase().trim();
-  const tableBody = document.querySelector('#stock-table tbody');
+  if (!ticker) return;
 
+  const tableBody = document.querySelector('#stock-table tbody');
   const newRow = document.createElement('tr');
   newRow.setAttribute('data-ticker', ticker);
+
   newRow.innerHTML = `
     <td>${ticker}</td>
     <td class="current-price">...</td>
-    <td><input class="manual-price" type="number" value="${manual}"/></td>
+    <td><input class="manual-price" type="number" value="${manual}" /></td>
     <td>
       <select class="drop-percent">
-        <option value="5"${drop === '5' ? ' selected' : ''}>5%</option>
-        <option value="10"${drop === '10' ? ' selected' : ''}>10%</option>
-        <option value="15"${drop === '15' ? ' selected' : ''}>15%</option>
-        <option value="20"${drop === '20' ? ' selected' : ''}>20%</option>
+        <option value="5" ${drop==='5'?'selected':''}>5%</option>
+        <option value="10" ${drop==='10'?'selected':''}>10%</option>
+        <option value="15" ${drop==='15'?'selected':''}>15%</option>
+        <option value="20" ${drop==='20'?'selected':''}>20%</option>
       </select>
     </td>
     <td class="recommended-price">...</td>
-    <td><input class="comment-box" maxlength="500" placeholder="Add comments here..." value="${comment}"/></td>
+    <td><textarea class="comment-box" maxlength="500" placeholder="Add comments...">${comment}</textarea></td>
     <td><button onclick="this.closest('tr').remove(); saveToLocalStorage();">❌</button></td>
   `;
+
   tableBody.appendChild(newRow);
 
-  newRow.querySelector('.manual-price').addEventListener('input', updatePrices);
-  newRow.querySelector('.drop-percent').addEventListener('change', updatePrices);
+  newRow.querySelector('.manual-price').addEventListener('input', () => {
+    updatePrices();
+    saveToLocalStorage();
+  });
+  newRow.querySelector('.drop-percent').addEventListener('change', () => {
+    updatePrices();
+    saveToLocalStorage();
+  });
   newRow.querySelector('.comment-box').addEventListener('input', saveToLocalStorage);
 
-  fetchPrice(ticker).then(current => {
-    if (current) {
-      newRow.querySelector('.current-price').textContent = current.toFixed(2);
-      updatePrices();
-    }
-  });
+  updatePrices();
+  saveToLocalStorage();
 }
 
-document.getElementById('add-stock-btn').addEventListener('click', () => {
-  const input = document.getElementById('new-ticker');
-  addStock(input.value);
-  input.value = '';
-});
-
-document.getElementById('reset-btn').addEventListener('click', () => {
+function resetTable() {
   localStorage.removeItem('stocks');
-  location.reload();
-});
+  document.querySelector('#stock-table tbody').innerHTML = '';
+}
 
-document.getElementById('show-buy-btn').addEventListener('click', updatePrices);
+function showBuyOpportunities() {
+  const rows = document.querySelectorAll('#stock-table tbody tr');
+  for (const row of rows) {
+    const current = parseFloat(row.querySelector('.current-price').textContent);
+    const recommended = parseFloat(row.querySelector('.recommended-price').textContent);
+    row.style.display = (current <= recommended) ? '' : 'none';
+  }
+}
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('load', () => {
   loadFromLocalStorage();
   updatePrices();
 });

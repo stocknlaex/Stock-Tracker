@@ -3,35 +3,101 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Stock Tracker</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Stock Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background: #f6f9fc;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    #controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    #stock-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+    }
+
+    #stock-table th, #stock-table td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    #stock-table th {
+      background-color: #f0f0f0;
+    }
+
+    input[type="number"], textarea, select {
+      width: 100%;
+      padding: 6px;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    button {
+      padding: 8px 14px;
+      border: none;
+      background-color: #007BFF;
+      color: white;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #new-ticker {
+      padding: 8px;
+      font-size: 14px;
+      width: 150px;
+    }
+
+    .recommended-price {
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>📈 My Stock Tracker</h1>
+  <h1>📊 Stock Tracker</h1>
 
-    <div class="controls">
-      <input type="text" id="new-ticker" placeholder="Enter Ticker (e.g. AAPL)" />
-      <button onclick="addStock()">➕ Add Stock</button>
-      <button onclick="filterGreen()">🟢 Show Buy Opportunities</button>
-      <button onclick="resetTracker()">🔄 Reset</button>
-    </div>
-
-    <table id="stock-table">
-      <thead>
-        <tr>
-          <th>Ticker</th>
-          <th>Current Price</th>
-          <th>Manual Price</th>
-          <th>Buy @ % Drop</th>
-          <th>Recommended Buy Price</th>
-          <th>Comments</th>
-          <th>Delete</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <div id="controls">
+    <input type="text" id="new-ticker" placeholder="Enter ticker (e.g. AAPL)" />
+    <button onclick="addStock(document.getElementById('new-ticker').value)">➕ Add</button>
+    <button onclick="showBuyOpportunities()">🟢 Show Buy Opportunities</button>
+    <button onclick="resetTable()">🔄 Reset</button>
   </div>
+
+  <table id="stock-table">
+    <thead>
+      <tr>
+        <th>Ticker</th>
+        <th>Current Price</th>
+        <th>Manual Price</th>
+        <th>Buy % Drop</th>
+        <th>Recommended Buy Price</th>
+        <th>Comments</th>
+        <th>Delete</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
   <script src="script.js"></script>
 </body>
