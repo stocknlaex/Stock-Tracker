@@ -1,6 +1,5 @@
 const apiKey = 'd274679r01qloarhe5kgd274679r01qloarhe5l0';
 
-// Fetch current stock price
 async function fetchPrice(ticker) {
   try {
     const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`);
@@ -12,7 +11,6 @@ async function fetchPrice(ticker) {
   }
 }
 
-// Update all current prices and recommended price
 async function updatePrices() {
   const rows = document.querySelectorAll('#stock-table tbody tr');
   for (const row of rows) {
@@ -23,8 +21,10 @@ async function updatePrices() {
     row.querySelector('.current-price').textContent = current.toFixed(2);
 
     const manualInput = row.querySelector('.manual-price');
-    const recommendedCell = row.querySelector('.recommended-price');
     const percentSelect = row.querySelector('.percent-select');
+    const recommendedCell = row.querySelector('.recommended-price');
+    const commentsInput = row.querySelector('.comments');
+
     const manualVal = parseFloat(manualInput.value);
     const percent = parseFloat(percentSelect.value);
 
@@ -40,10 +40,13 @@ async function updatePrices() {
         recommendedCell.style.backgroundColor = '';
       }
     }
+
+    if (commentsInput) {
+      localStorage.setItem(`comment_${ticker}`, commentsInput.value);
+    }
   }
 }
 
-// Add a stock row
 function addStock(tickerInputOrEvent, silent = false) {
   let ticker = typeof tickerInputOrEvent === "string"
     ? tickerInputOrEvent
@@ -69,24 +72,33 @@ function addStock(tickerInputOrEvent, silent = false) {
       </select>
     </td>
     <td class="recommended-price">-</td>
+    <td><textarea class="comments" maxlength="500" placeholder="Add notes..."></textarea></td>
     <td><button onclick="removeRow(this)">â</button></td>
   `;
+
   tableBody.appendChild(newRow);
   if (typeof tickerInputOrEvent !== "string") {
     document.getElementById('new-ticker').value = '';
   }
 
-  const savedPrice = localStorage.getItem(`price_${ticker}`);
-  if (savedPrice) {
-    newRow.querySelector('.manual-price').value = savedPrice;
-  }
-  const savedPercent = localStorage.getItem(`percent_${ticker}`);
-  if (savedPercent) {
-    newRow.querySelector('.percent-select').value = savedPercent;
-  }
+  const manualInput = newRow.querySelector('.manual-price');
+  const percentSelect = newRow.querySelector('.percent-select');
+  const commentsInput = newRow.querySelector('.comments');
 
-  newRow.querySelector('.manual-price').addEventListener('input', updatePrices);
-  newRow.querySelector('.percent-select').addEventListener('change', updatePrices);
+  const savedPrice = localStorage.getItem(`price_${ticker}`);
+  if (savedPrice) manualInput.value = savedPrice;
+
+  const savedPercent = localStorage.getItem(`percent_${ticker}`);
+  if (savedPercent) percentSelect.value = savedPercent;
+
+  const savedComment = localStorage.getItem(`comment_${ticker}`);
+  if (savedComment) commentsInput.value = savedComment;
+
+  manualInput.addEventListener('input', updatePrices);
+  percentSelect.addEventListener('change', updatePrices);
+  commentsInput.addEventListener('input', () => {
+    localStorage.setItem(`comment_${ticker}`, commentsInput.value);
+  });
 
   if (!silent) {
     let tracked = JSON.parse(localStorage.getItem("trackedTickers")) || [];
@@ -104,7 +116,6 @@ function addStock(tickerInputOrEvent, silent = false) {
   });
 }
 
-// Remove row and clear storage
 function removeRow(button) {
   const row = button.closest('tr');
   const ticker = row.dataset.ticker;
@@ -115,9 +126,9 @@ function removeRow(button) {
   localStorage.setItem("trackedTickers", JSON.stringify(tracked));
   localStorage.removeItem(`price_${ticker}`);
   localStorage.removeItem(`percent_${ticker}`);
+  localStorage.removeItem(`comment_${ticker}`);
 }
 
-// Filter green cells
 function filterGreen() {
   const rows = document.querySelectorAll('#stock-table tbody tr');
   rows.forEach(row => {
@@ -126,13 +137,11 @@ function filterGreen() {
   });
 }
 
-// Reset filter
 function resetFilter() {
   const rows = document.querySelectorAll('#stock-table tbody tr');
   rows.forEach(row => row.style.display = '');
 }
 
-// Restore from localStorage on page load
 window.addEventListener("DOMContentLoaded", () => {
   const tracked = JSON.parse(localStorage.getItem("trackedTickers")) || [];
   tracked.forEach(ticker => addStock(ticker, true));
