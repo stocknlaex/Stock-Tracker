@@ -2,10 +2,34 @@ const API_KEY = "d27igopr01qloarj8g0gd27igopr01qloarj8g10";
 const API_URL = "https://finnhub.io/api/v1/quote";
 
 async function fetchPrice(ticker) {
+  const key = `fetchCount_${ticker}`;
+  const lastData = JSON.parse(localStorage.getItem(key)) || { count: 0, date: "", lastFetched: null };
+
+  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const hour = now.getUTCHours(); // Use UTC to avoid timezone errors
+  const isUSMarketOpen = hour >= 13.5 && hour <= 20; // 9:30am–4:00pm EST = 13:30–20:00 UTC
+
+  if (lastData.date !== today) {
+    lastData.count = 0;
+    lastData.date = today;
+  }
+
+  if (lastData.count >= 15 || !isUSMarketOpen) {
+    console.warn(`Fetch skipped for ${ticker}: limit reached or market closed`);
+    return "—"; // Or show cached price if stored
+  }
+
   try {
     const res = await fetch(`${API_URL}?symbol=${ticker}&token=${API_KEY}`);
     const data = await res.json();
-    return data.c ? data.c.toFixed(2) : "N/A";
+
+    if (!data.c) throw new Error("Price missing");
+
+    lastData.count += 1;
+    lastData.lastFetched = now.toISOString();
+    localStorage.setItem(key, JSON.stringify(lastData));
+    return data.c.toFixed(2);
   } catch (err) {
     console.error(`Error fetching ${ticker}:`, err);
     return "N/A";
