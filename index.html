@@ -5,23 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Stock Tracker</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 30px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    body { font-family: Arial; margin: 40px; }
+    table { width: 100%; border-collapse: collapse; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    th { background-color: #f2f2f2; }
-    input, select { width: 100%; }
-    button { padding: 5px 10px; }
+    input, select { width: 90%; padding: 4px; }
+    .delete-btn { color: red; cursor: pointer; }
   </style>
 </head>
 <body>
   <h2>📊 Stock Tracker</h2>
+  <input type="text" id="tickerInput" placeholder="Enter ticker (e.g., AAPL)" />
+  <button onclick="addStock()">+ Add</button>
+  <button onclick="showOpportunities()">🎯 Show Buy Opportunities</button>
+  <button onclick="resetTable()">🔁 Reset</button>
 
-  <input type="text" id="ticker-input" placeholder="Enter Ticker (e.g. AAPL)" />
-  <button id="add-btn">➕ Add</button>
-  <button id="show-btn">📉 Show Buy Opportunities</button>
-  <button id="reset-btn">🔁 Reset</button>
-
-  <table id="stock-table">
+  <br/><br/>
+  <table id="stockTable">
     <thead>
       <tr>
         <th>Ticker</th>
@@ -33,9 +32,7 @@
         <th>Delete</th>
       </tr>
     </thead>
-    <tbody>
-      <!-- dynamic rows will be added here -->
-    </tbody>
+    <tbody id="tableBody"></tbody>
   </table>
 
   <script src="script.js"></script>

@@ -1,149 +1,117 @@
-const apiKey = '80cf1a91e1mshdfbdf65560de678p133a61jsnb30d9e04a85f'; // from your screenshot
-const apiHost = 'yh-finance.p.rapidapi.com';
+const API_KEY = "d27igopr01qloarj8g0gd27igopr01qloarj8g10";
+const API_URL = "https://finnhub.io/api/v1/quote";
 
-// Fetch current price using Yahoo Finance (RapidAPI)
-const fetchPrice = async (ticker) => {
-  const url = `https://${apiHost}/stock/v2/get-summary?symbol=${ticker}&region=US`;
-
-  const options = {
-    method: 'GET',
-    headers: {
-      'X-RapidAPI-Key': apiKey,
-      'X-RapidAPI-Host': apiHost
-    }
-  };
-
+async function fetchPrice(ticker) {
   try {
-    const res = await fetch(url, options);
-
-    if (!res.ok) {
-      console.error(`API returned status ${res.status} for ${ticker}`);
-      return null;
-    }
-
+    const res = await fetch(`${API_URL}?symbol=${ticker}&token=${API_KEY}`);
     const data = await res.json();
-    const price = data?.price?.regularMarketPrice?.raw;
-    return price ?? null;
+    return data.c ? data.c.toFixed(2) : "N/A";
   } catch (err) {
     console.error(`Error fetching ${ticker}:`, err);
-    return null;
+    return "N/A";
   }
-};
+}
 
-// Save all rows to localStorage
 function saveToLocalStorage() {
-  const rows = [...document.querySelectorAll('#stock-table tbody tr')].map(row => ({
-    ticker: row.dataset.ticker,
-    manual: row.querySelector('.manual-price').value,
-    drop: row.querySelector('.drop-percent').value,
-    comment: row.querySelector('.comment-box').value
+  const rows = document.querySelectorAll("#tableBody tr");
+  const data = Array.from(rows).map(row => ({
+    ticker: row.querySelector(".ticker").innerText,
+    manual: row.querySelector(".manual").value,
+    percent: row.querySelector(".percent").value,
+    comment: row.querySelector(".comment").value
   }));
-  localStorage.setItem('stocks', JSON.stringify(rows));
+  localStorage.setItem("stocks", JSON.stringify(data));
 }
 
-// Load rows from localStorage on page load
-function loadFromLocalStorage() {
-  const saved = JSON.parse(localStorage.getItem('stocks') || '[]');
-  for (const item of saved) {
-    addStock(item.ticker, item.manual, item.drop, item.comment);
-  }
-}
-
-// Add a new stock row
-function addStock(ticker, manual = '', drop = '10%', comment = '') {
+async function addStock() {
+  const input = document.getElementById("tickerInput");
+  const ticker = input.value.trim().toUpperCase();
   if (!ticker) return;
+  input.value = "";
 
-  const table = document.querySelector('#stock-table tbody');
-  const row = document.createElement('tr');
-  row.dataset.ticker = ticker.toUpperCase();
+  const tbody = document.getElementById("tableBody");
+  const row = document.createElement("tr");
+
+  const price = await fetchPrice(ticker);
 
   row.innerHTML = `
-    <td>${ticker.toUpperCase()}</td>
-    <td class="current-price">N/A</td>
-    <td><input class="manual-price" type="number" value="${manual}" /></td>
+    <td class="ticker">${ticker}</td>
+    <td class="price">${price}</td>
+    <td><input class="manual" type="number" /></td>
     <td>
-      <select class="drop-percent">
-        ${[5, 10, 15, 20, 25, 30].map(p => `<option value="${p}%" ${p + '%' === drop ? 'selected' : ''}>${p}%</option>`).join('')}
+      <select class="percent">
+        <option>5%</option><option selected>10%</option><option>15%</option><option>20%</option>
       </select>
     </td>
-    <td class="recommended-price">N/A</td>
-    <td><input class="comment-box" maxlength="500" value="${comment}" placeholder="Add comments..."/></td>
-    <td><button class="delete-btn">❌</button></td>
+    <td class="target">N/A</td>
+    <td><input class="comment" maxlength="500" placeholder="Add comments..." /></td>
+    <td><span class="delete-btn" onclick="deleteRow(this)">❌</span></td>
   `;
 
-  // Delete handler
-  row.querySelector('.delete-btn').addEventListener('click', () => {
-    row.remove();
-    saveToLocalStorage();
-  });
-
-  // Change listeners for inputs
-  row.querySelectorAll('input, select').forEach(input => {
-    input.addEventListener('input', () => {
-      updateRecommendedPrice(row);
-      saveToLocalStorage();
-    });
-  });
-
-  table.appendChild(row);
-  updateRecommendedPrice(row);
+  tbody.appendChild(row);
+  addListeners(row);
+  saveToLocalStorage();
 }
 
-// Update all current prices and recommended prices
-async function updatePrices() {
-  const rows = document.querySelectorAll('#stock-table tbody tr');
-  for (const row of rows) {
-    const ticker = row.dataset.ticker;
-    const priceCell = row.querySelector('.current-price');
-    const price = await fetchPrice(ticker);
+function deleteRow(btn) {
+  const row = btn.closest("tr");
+  row.remove();
+  saveToLocalStorage();
+}
 
-    if (price !== null) {
-      priceCell.textContent = price.toFixed(2);
+function addListeners(row) {
+  const manual = row.querySelector(".manual");
+  const percent = row.querySelector(".percent");
+
+  function updateTarget() {
+    const base = parseFloat(manual.value);
+    const pct = parseInt(percent.value);
+    if (!isNaN(base)) {
+      const drop = base * (1 - pct / 100);
+      row.querySelector(".target").innerText = drop.toFixed(2);
     } else {
-      priceCell.textContent = 'N/A';
+      row.querySelector(".target").innerText = "N/A";
     }
+    saveToLocalStorage();
   }
+
+  manual.addEventListener("input", updateTarget);
+  percent.addEventListener("change", updateTarget);
+  row.querySelector(".comment").addEventListener("input", saveToLocalStorage);
 }
 
-// Calculate recommended price based on drop%
-function updateRecommendedPrice(row) {
-  const manual = parseFloat(row.querySelector('.manual-price').value);
-  const dropPercent = parseFloat(row.querySelector('.drop-percent').value);
-
-  const recommendedCell = row.querySelector('.recommended-price');
-
-  if (!isNaN(manual) && !isNaN(dropPercent)) {
-    const rec = manual * (1 - dropPercent / 100);
-    recommendedCell.textContent = rec.toFixed(2);
-  } else {
-    recommendedCell.textContent = 'N/A';
-  }
-}
-
-// Reset everything
 function resetTable() {
-  const tbody = document.querySelector('#stock-table tbody');
-  if (tbody) {
-    tbody.innerHTML = '';
-    localStorage.removeItem('stocks');
-  }
+  localStorage.removeItem("stocks");
+  document.getElementById("tableBody").innerHTML = "";
 }
 
-// DOM Ready
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelector('#add-button').addEventListener('click', () => {
-    const input = document.querySelector('#ticker-input');
-    const ticker = input.value.trim();
-    if (ticker) {
-      addStock(ticker);
-      input.value = '';
-      saveToLocalStorage();
+function showOpportunities() {
+  const rows = document.querySelectorAll("#tableBody tr");
+  rows.forEach(row => {
+    const current = parseFloat(row.querySelector(".price").innerText);
+    const target = parseFloat(row.querySelector(".target").innerText);
+    if (!isNaN(current) && !isNaN(target) && current <= target) {
+      row.style.backgroundColor = "#d4edda";
+    } else {
+      row.style.backgroundColor = "";
     }
   });
+}
 
-  document.querySelector('#reset-button').addEventListener('click', resetTable);
-  document.querySelector('#show-opportunities').addEventListener('click', updatePrices);
+async function loadFromLocalStorage() {
+  const saved = JSON.parse(localStorage.getItem("stocks") || "[]");
+  for (const stock of saved) {
+    document.getElementById("tickerInput").value = stock.ticker;
+    await addStock();
 
-  loadFromLocalStorage();
-  updatePrices();
-});
+    const lastRow = document.querySelector("#tableBody tr:last-child");
+    lastRow.querySelector(".manual").value = stock.manual;
+    lastRow.querySelector(".percent").value = stock.percent;
+    lastRow.querySelector(".comment").value = stock.comment;
+
+    const event = new Event("input");
+    lastRow.querySelector(".manual").dispatchEvent(event);
+  }
+}
+
+window.addEventListener("load", loadFromLocalStorage);
