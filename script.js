@@ -2,7 +2,8 @@ const apiKey = 'd274679r01qloarhe5kgd274679r01qloarhe510';
 
 async function fetchPrice(ticker) {
   try {
-    const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`);
+    const url = `https://corsproxy.io/?https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`;
+    const res = await fetch(url);
     const data = await res.json();
     return data.c;
   } catch (err) {
@@ -32,36 +33,40 @@ async function updatePrices() {
   const rows = document.querySelectorAll('#stock-table tbody tr');
   for (const row of rows) {
     const ticker = row.dataset.ticker;
-    const current = await fetchPrice(ticker);
-    if (!current) continue;
-    row.querySelector('.current-price').textContent = current.toFixed(2);
+    try {
+      const current = await fetchPrice(ticker);
+      row.querySelector('.current-price').textContent = current?.toFixed(2) || 'N/A';
 
-    const manualVal = parseFloat(row.querySelector('.manual-price').value);
-    const dropVal = parseFloat(row.querySelector('.drop-percent').value);
-    const recommendedCell = row.querySelector('.recommended-price');
+      const manualVal = parseFloat(row.querySelector('.manual-price').value);
+      const dropVal = parseFloat(row.querySelector('.drop-percent').value);
+      const recommendedCell = row.querySelector('.recommended-price');
 
-    if (!isNaN(manualVal) && !isNaN(dropVal)) {
-      const target = (manualVal * (1 - dropVal / 100)).toFixed(2);
-      recommendedCell.textContent = target;
-      recommendedCell.style.backgroundColor = current <= target ? 'lightgreen' : '';
+      if (!isNaN(manualVal) && !isNaN(dropVal)) {
+        const target = (manualVal * (1 - dropVal / 100)).toFixed(2);
+        recommendedCell.textContent = target;
+        recommendedCell.style.backgroundColor = (current <= target) ? 'lightgreen' : '';
+      } else {
+        recommendedCell.textContent = 'N/A';
+        recommendedCell.style.backgroundColor = '';
+      }
+    } catch (e) {
+      console.error(`Error fetching price for ${ticker}`, e);
     }
   }
+  saveToLocalStorage();
 }
 
-function addStock(ticker = '', manual = '', drop = '10', comment = '') {
-  const input = document.getElementById('new-ticker');
-  if (!ticker) {
-    ticker = input.value.toUpperCase().trim();
-    if (!ticker) return;
-  }
-
+function addStock(ticker, manual = '', drop = '10', comment = '') {
+  if (!ticker) return;
+  ticker = ticker.toUpperCase().trim();
   const tableBody = document.querySelector('#stock-table tbody');
+
   const newRow = document.createElement('tr');
   newRow.setAttribute('data-ticker', ticker);
   newRow.innerHTML = `
     <td>${ticker}</td>
-    <td class="current-price"></td>
-    <td><input class="manual-price" type="number" value="${manual}" /></td>
+    <td class="current-price">...</td>
+    <td><input class="manual-price" type="number" value="${manual}"/></td>
     <td>
       <select class="drop-percent">
         <option value="5"${drop === '5' ? ' selected' : ''}>5%</option>
@@ -70,47 +75,38 @@ function addStock(ticker = '', manual = '', drop = '10', comment = '') {
         <option value="20"${drop === '20' ? ' selected' : ''}>20%</option>
       </select>
     </td>
-    <td class="recommended-price"></td>
-    <td><input class="comment-box" type="text" maxlength="500" value="${comment}" /></td>
-    <td><button class="delete-row">ðï¸</button></td>
+    <td class="recommended-price">...</td>
+    <td><input class="comment-box" maxlength="500" placeholder="Add comments here..." value="${comment}"/></td>
+    <td><button onclick="this.closest('tr').remove(); saveToLocalStorage();">❌</button></td>
   `;
   tableBody.appendChild(newRow);
-  input.value = '';
 
-  newRow.querySelector('.manual-price').addEventListener('input', () => {
-    updatePrices();
-    saveToLocalStorage();
-  });
-  newRow.querySelector('.drop-percent').addEventListener('change', () => {
-    updatePrices();
-    saveToLocalStorage();
-  });
+  newRow.querySelector('.manual-price').addEventListener('input', updatePrices);
+  newRow.querySelector('.drop-percent').addEventListener('change', updatePrices);
   newRow.querySelector('.comment-box').addEventListener('input', saveToLocalStorage);
-  newRow.querySelector('.delete-row').addEventListener('click', () => {
-    newRow.remove();
-    saveToLocalStorage();
-  });
 
   fetchPrice(ticker).then(current => {
-    if (!current) return;
-    newRow.querySelector('.current-price').textContent = current.toFixed(2);
-    updatePrices();
+    if (current) {
+      newRow.querySelector('.current-price').textContent = current.toFixed(2);
+      updatePrices();
+    }
   });
 }
 
-function filterGreen() {
-  const rows = document.querySelectorAll('#stock-table tbody tr');
-  for (const row of rows) {
-    const cell = row.querySelector('.recommended-price');
-    row.style.display = cell.style.backgroundColor === 'lightgreen' ? '' : 'none';
-  }
-}
+document.getElementById('add-stock-btn').addEventListener('click', () => {
+  const input = document.getElementById('new-ticker');
+  addStock(input.value);
+  input.value = '';
+});
 
-function resetFilter() {
-  document.querySelectorAll('#stock-table tbody tr').forEach(row => row.style.display = '');
-}
+document.getElementById('reset-btn').addEventListener('click', () => {
+  localStorage.removeItem('stocks');
+  location.reload();
+});
 
-window.onload = () => {
+document.getElementById('show-buy-btn').addEventListener('click', updatePrices);
+
+window.addEventListener('DOMContentLoaded', () => {
   loadFromLocalStorage();
   updatePrices();
-};
+});
