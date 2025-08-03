@@ -1,4 +1,4 @@
-const apiKey = 'd274679r01qloarhe5kgd274679r01qloarhe510';
+const apiKey = 'd27igopr01qloarj8g0gd27igopr01qloarj8g10';
 
 async function fetchPrice(ticker) {
   try {
