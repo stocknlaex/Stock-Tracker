@@ -1,4 +1,4 @@
-const apiKey = 'd274679r01qloarhe5kgd274679r01qloarhe5l0';
+const apiKey = 'd274679r01qloarhe5kgd274679r01qloarhe510';
 
 async function fetchPrice(ticker) {
   try {
@@ -11,140 +11,106 @@ async function fetchPrice(ticker) {
   }
 }
 
+function saveToLocalStorage() {
+  const rows = [...document.querySelectorAll('#stock-table tbody tr')].map(row => ({
+    ticker: row.dataset.ticker,
+    manual: row.querySelector('.manual-price').value,
+    drop: row.querySelector('.drop-percent').value,
+    comment: row.querySelector('.comment-box').value
+  }));
+  localStorage.setItem('stocks', JSON.stringify(rows));
+}
+
+function loadFromLocalStorage() {
+  const saved = JSON.parse(localStorage.getItem('stocks') || '[]');
+  for (const item of saved) {
+    addStock(item.ticker, item.manual, item.drop, item.comment);
+  }
+}
+
 async function updatePrices() {
   const rows = document.querySelectorAll('#stock-table tbody tr');
   for (const row of rows) {
     const ticker = row.dataset.ticker;
     const current = await fetchPrice(ticker);
     if (!current) continue;
-
     row.querySelector('.current-price').textContent = current.toFixed(2);
 
-    const manualInput = row.querySelector('.manual-price');
-    const percentSelect = row.querySelector('.percent-select');
+    const manualVal = parseFloat(row.querySelector('.manual-price').value);
+    const dropVal = parseFloat(row.querySelector('.drop-percent').value);
     const recommendedCell = row.querySelector('.recommended-price');
-    const commentsInput = row.querySelector('.comments');
 
-    const manualVal = parseFloat(manualInput.value);
-    const percent = parseFloat(percentSelect.value);
-
-    if (!isNaN(manualVal)) {
-      const target = (manualVal * (1 - percent)).toFixed(2);
+    if (!isNaN(manualVal) && !isNaN(dropVal)) {
+      const target = (manualVal * (1 - dropVal / 100)).toFixed(2);
       recommendedCell.textContent = target;
-      localStorage.setItem(`price_${ticker}`, manualVal);
-      localStorage.setItem(`percent_${ticker}`, percent);
-
-      if (current <= target) {
-        recommendedCell.style.backgroundColor = 'lightgreen';
-      } else {
-        recommendedCell.style.backgroundColor = '';
-      }
-    }
-
-    if (commentsInput) {
-      localStorage.setItem(`comment_${ticker}`, commentsInput.value);
+      recommendedCell.style.backgroundColor = current <= target ? 'lightgreen' : '';
     }
   }
 }
 
-function addStock(tickerInputOrEvent, silent = false) {
-  let ticker = typeof tickerInputOrEvent === "string"
-    ? tickerInputOrEvent
-    : document.getElementById('new-ticker').value.toUpperCase().trim();
-
-  if (!ticker) return;
+function addStock(ticker = '', manual = '', drop = '10', comment = '') {
+  const input = document.getElementById('new-ticker');
+  if (!ticker) {
+    ticker = input.value.toUpperCase().trim();
+    if (!ticker) return;
+  }
 
   const tableBody = document.querySelector('#stock-table tbody');
-  if (document.querySelector(`tr[data-ticker="${ticker}"]`)) return;
-
   const newRow = document.createElement('tr');
   newRow.setAttribute('data-ticker', ticker);
   newRow.innerHTML = `
     <td>${ticker}</td>
-    <td class="current-price">-</td>
-    <td><input class="manual-price" type="number" /></td>
+    <td class="current-price"></td>
+    <td><input class="manual-price" type="number" value="${manual}" /></td>
     <td>
-      <select class="percent-select">
-        <option value="0.10">10%</option>
-        <option value="0.05">5%</option>
-        <option value="0.15">15%</option>
-        <option value="0.20">20%</option>
+      <select class="drop-percent">
+        <option value="5"${drop === '5' ? ' selected' : ''}>5%</option>
+        <option value="10"${drop === '10' ? ' selected' : ''}>10%</option>
+        <option value="15"${drop === '15' ? ' selected' : ''}>15%</option>
+        <option value="20"${drop === '20' ? ' selected' : ''}>20%</option>
       </select>
     </td>
-    <td class="recommended-price">-</td>
-    <td><textarea class="comments" maxlength="500" placeholder="Add notes..."></textarea></td>
-    <td><button onclick="removeRow(this)">â</button></td>
+    <td class="recommended-price"></td>
+    <td><input class="comment-box" type="text" maxlength="500" value="${comment}" /></td>
+    <td><button class="delete-row">ðï¸</button></td>
   `;
-
   tableBody.appendChild(newRow);
-  if (typeof tickerInputOrEvent !== "string") {
-    document.getElementById('new-ticker').value = '';
-  }
+  input.value = '';
 
-  const manualInput = newRow.querySelector('.manual-price');
-  const percentSelect = newRow.querySelector('.percent-select');
-  const commentsInput = newRow.querySelector('.comments');
-
-  const savedPrice = localStorage.getItem(`price_${ticker}`);
-  if (savedPrice) manualInput.value = savedPrice;
-
-  const savedPercent = localStorage.getItem(`percent_${ticker}`);
-  if (savedPercent) percentSelect.value = savedPercent;
-
-  const savedComment = localStorage.getItem(`comment_${ticker}`);
-  if (savedComment) commentsInput.value = savedComment;
-
-  manualInput.addEventListener('input', updatePrices);
-  percentSelect.addEventListener('change', updatePrices);
-  commentsInput.addEventListener('input', () => {
-    localStorage.setItem(`comment_${ticker}`, commentsInput.value);
+  newRow.querySelector('.manual-price').addEventListener('input', () => {
+    updatePrices();
+    saveToLocalStorage();
   });
-
-  if (!silent) {
-    let tracked = JSON.parse(localStorage.getItem("trackedTickers")) || [];
-    if (!tracked.includes(ticker)) {
-      tracked.push(ticker);
-      localStorage.setItem("trackedTickers", JSON.stringify(tracked));
-    }
-  }
+  newRow.querySelector('.drop-percent').addEventListener('change', () => {
+    updatePrices();
+    saveToLocalStorage();
+  });
+  newRow.querySelector('.comment-box').addEventListener('input', saveToLocalStorage);
+  newRow.querySelector('.delete-row').addEventListener('click', () => {
+    newRow.remove();
+    saveToLocalStorage();
+  });
 
   fetchPrice(ticker).then(current => {
-    if (current) {
-      newRow.querySelector('.current-price').textContent = current.toFixed(2);
-      updatePrices();
-    }
+    if (!current) return;
+    newRow.querySelector('.current-price').textContent = current.toFixed(2);
+    updatePrices();
   });
-}
-
-function removeRow(button) {
-  const row = button.closest('tr');
-  const ticker = row.dataset.ticker;
-  row.remove();
-
-  let tracked = JSON.parse(localStorage.getItem("trackedTickers")) || [];
-  tracked = tracked.filter(t => t !== ticker);
-  localStorage.setItem("trackedTickers", JSON.stringify(tracked));
-  localStorage.removeItem(`price_${ticker}`);
-  localStorage.removeItem(`percent_${ticker}`);
-  localStorage.removeItem(`comment_${ticker}`);
 }
 
 function filterGreen() {
   const rows = document.querySelectorAll('#stock-table tbody tr');
-  rows.forEach(row => {
+  for (const row of rows) {
     const cell = row.querySelector('.recommended-price');
     row.style.display = cell.style.backgroundColor === 'lightgreen' ? '' : 'none';
-  });
+  }
 }
 
 function resetFilter() {
-  const rows = document.querySelectorAll('#stock-table tbody tr');
-  rows.forEach(row => row.style.display = '');
+  document.querySelectorAll('#stock-table tbody tr').forEach(row => row.style.display = '');
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-  const tracked = JSON.parse(localStorage.getItem("trackedTickers")) || [];
-  tracked.forEach(ticker => addStock(ticker, true));
+window.onload = () => {
+  loadFromLocalStorage();
   updatePrices();
-  setInterval(updatePrices, 30000);
-});
+};
