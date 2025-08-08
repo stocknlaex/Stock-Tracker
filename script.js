@@ -1,4 +1,4 @@
-const API_KEY = "d27igopr01qloarj8g0gd27igopr01qloarj8g10";
+const API_KEY = "d2auethr01qgk9ugojagd2auethr01qgk9ugojb0";
 const API_URL = "https://finnhub.io/api/v1/quote";
 
 async function fetchPrice(ticker) {
